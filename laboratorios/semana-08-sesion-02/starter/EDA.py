@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-os.makedirs('/starter/figuras', exist_ok=True)
+os.makedirs('./starter/figuras', exist_ok=True)
 
 data = pd.read_csv('./starter/viajes_taxi.csv')
 
@@ -46,14 +46,25 @@ sin_atipicos = data.query(f' tarifa >= {limite_inferior} and tarifa <= {limite_s
 
 print('Valores atipicos')
 print(atipicos) #LOS VALORES ATIPICOS SON PARA ANALIZARLOS PORQUE TE ESTAN DICIENDO QUE PASA ALGO
+print('Cantidad de atipicos:', len(atipicos))
+
+# -------------- REVISAR SI LOS ATIPICOS SON ERRORES O NO
+
+print('Tarifas de 999.99:', (data['tarifa'] == 999.99).sum()) #esto es claramente un error de captura
+print('Duraciones negativas:', (data['duracion_min'] < 0).sum()) #no existe un viaje que dure menos de 0 minutos
+
+print(atipicos['zona_origen'].value_counts()) #vemos de donde salen los viajes atipicos
+print(atipicos['zona_destino'].value_counts()) #y a donde llegan, muchos son del aeropuerto JFK
 
 #------------AHORA PODEMOS VER LAS CORRELACIONES (PEARSON-> ASUME LINEALIDAD, SPEARMAN-> CUANDO NO ASUME LINEALIDAD)
 
 plt.figure()
-plt.scatter(sin_atipicos['tarifa'], sin_atipicos['distancia_km'])
-plt.title('Dispercion de tarifa vs distancia_km')
+plt.scatter(sin_atipicos['distancia_km'], sin_atipicos['tarifa']) #distancia en el eje x, tarifa en el eje y
+plt.title('Dispercion de distancia_km vs tarifa')
+plt.xlabel('Distancia (km)')
+plt.ylabel('Tarifa (USD)')
 plt.savefig('./starter/figuras/dispercion_distancia_vs_tarifa_sinatipicos.png')
 plt.close()
 
-print(data.corr())
+print(data.corr(numeric_only=True)) #solo con las columnas numericas, si no da error por las columnas de texto
 
