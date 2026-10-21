@@ -1,0 +1,6 @@
+services:
+  python-app:
+    build: .
+    container_name: semana08
+    volumes:
+      - ./datacontenedor:/app/starter/figuras #conectarle al contenedor
