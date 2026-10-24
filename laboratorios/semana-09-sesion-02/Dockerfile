@@ -8,4 +8,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python3", "./starter/EDA.py"]
+WORKDIR /app/starter
+
+CMD ["python3", "ejercicio1_fuga.py"]

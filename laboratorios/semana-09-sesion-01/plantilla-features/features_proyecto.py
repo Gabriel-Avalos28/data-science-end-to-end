@@ -16,7 +16,8 @@ OBJETIVO = "UNITS"
 # si no, se cuela informacion de prueba (data leakage).
 CORTE = "2016-01-01"
 SERIE = ["ITEM_ID", "STORE_ID"] #una serie es un producto en una tienda
-COLUMNAS = ["DATE", "ITEM_ID", "STORE_ID", "CAT_ID", "UNITS", "SELL_PRICE", "IS_PRE_LAUNCH"]
+COLUMNAS = ["DATE", "ITEM_ID", "STORE_ID", "CAT_ID", "UNITS", "SELL_PRICE", "IS_PRE_LAUNCH",
+            "WEEKDAY", "IS_WEEKEND", "IS_EVENT_DAY", "IS_SNAP"] #las del calendario las uso en el pipeline de la sesion 2
 
 lanzamientos = []
 precios = []
@@ -82,3 +83,8 @@ print(entreno.groupby(grupos_precio, observed=True)[OBJETIVO].agg(["mean", "coun
 print(entreno.groupby(["CAT_ID", grupos_precio], observed=True)[OBJETIVO].mean().unstack().round(2))
 
 print(datos.head())
+
+# Guardo la muestra con las 2 features para el pipeline de la sesion 2, asi no hay que
+# recorrer las 59 millones de filas otra vez. Es .csv.gz, asi que git no lo sube.
+datos.to_csv("muestra_con_features.csv.gz", index=False)
+print("Muestra guardada en muestra_con_features.csv.gz:", datos.shape)

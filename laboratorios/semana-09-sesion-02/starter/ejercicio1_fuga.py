@@ -36,17 +36,18 @@ print()
 print("Version correcta")
 # TODO 1: divide X e y en entrenamiento (80%) y prueba (20%), con
 # random_state=42, antes de calcular cualquier estadistica.
-X_ent, X_prueba, y_ent, y_prueba = X, X, y, y
+X_ent, X_prueba, y_ent, y_prueba = train_test_split(X, y, test_size=0.2, random_state=42) #primero divido, despues todo lo demas
 
 # TODO 2: un Pipeline con tres pasos: imputar con la mediana, escalar y
 # la regresion lineal.
 pipeline = Pipeline([
     ("imputar", SimpleImputer(strategy="median")),
+    ("escalar", StandardScaler()), #resta la media y divide para la desviacion
     ("modelo", LinearRegression()),
 ])
 
 # TODO 3: el pipeline aprende solo con entrenamiento.
-pipeline.fit(X, y)
+pipeline.fit(X_ent, y_ent) #la mediana, la media y el modelo salen solo de entrenamiento, prueba nunca se toca
 
 mae_correcto = mean_absolute_error(y_prueba, pipeline.predict(X_prueba))
 if "escalar" in pipeline.named_steps:

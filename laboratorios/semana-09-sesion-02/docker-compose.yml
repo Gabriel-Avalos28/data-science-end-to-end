@@ -1,0 +1,7 @@
+services:
+  python-app:
+    build: .
+    container_name: semana09s2
+    volumes:
+      - .:/app #conecta la carpeta del lab con el contenedor, asi no hay que reconstruir si cambio el codigo
+      - ../semana-09-sesion-01/plantilla-features:/features:ro #la muestra con mis 2 features de la sesion pasada, solo lectura

@@ -96,7 +96,7 @@ Escribe qué predice tu modelo y en qué momento: qué información existe en es
 Mi modelo predice `UNITS`, cuántas unidades de un producto se van a vender en una tienda en un día. La predicción se hace antes de que empiece ese día, para saber cuánto stock tener.
 
 - **Existe en ese momento:** la fecha y todo el calendario (día de la semana, mes, eventos, días SNAP), el producto, la tienda, la categoría, el precio (Walmart lo fija por semana, así que se sabe antes) y las ventas de los días anteriores.
-- **Todavía no existe:** las `UNITS` de ese día, `REVENUE` (que es `UNITS × SELL_PRICE`) y, probablemente, `IS_SALES_SPIKE` e `IS_SUSPECTED_STOCKOUT_...`, que mi pipeline marca mirando las ventas de ese mismo día.
+- **Todavía no existe:** las `UNITS` de ese día, `REVENUE` (que es `UNITS × SELL_PRICE`), `IS_SALES_SPIKE` e `IS_SUSPECTED_STOCKOUT_...`, que mi pipeline marca mirando las ventas de ese mismo día (cuando hay sospecha de falta de stock, `UNITS` siempre es 0, y cuando hay pico, siempre es 21 o más).
 
 ### Paso 2: construye las 2 features (15 minutos)
 

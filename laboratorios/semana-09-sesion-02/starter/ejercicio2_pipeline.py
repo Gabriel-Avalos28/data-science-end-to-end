@@ -27,7 +27,8 @@ y = viajes["tarifa"]
 
 # TODO 1: divide X e y en entrenamiento (80%) y prueba (20%), con
 # random_state=42.
-X_ent, X_prueba, y_ent, y_prueba = None, None, None, None
+X_ent, X_prueba, y_ent, y_prueba = train_test_split(X, y, test_size=0.2, random_state=42)
+print("Entrenamiento:", len(X_ent), "filas | Prueba:", len(X_prueba), "filas")
 
 # TODO 2: arma un Pipeline para las columnas NUMERICAS (imputar con la
 # mediana, despues escalar) y otro para las CATEGORICAS (imputar con el
@@ -35,16 +36,34 @@ X_ent, X_prueba, y_ent, y_prueba = None, None, None, None
 # sparse_output=False). Juntalos en un ColumnTransformer llamado
 # preparacion, con las columnas YA_LISTAS pasando sin cambios
 # ("passthrough").
-preparacion = None
+numericas = Pipeline([
+    ("imputar", SimpleImputer(strategy="median")), #los vacios se llenan con la mediana
+    ("escalar", StandardScaler()),
+])
+categoricas = Pipeline([
+    ("imputar", SimpleImputer(strategy="most_frequent")), #los vacios se llenan con el valor mas comun
+    ("codificar", OneHotEncoder(handle_unknown="ignore", sparse_output=False)), #ignore: si llega una zona nueva no se cae
+])
+preparacion = ColumnTransformer([
+    ("numericas", numericas, NUMERICAS),
+    ("categoricas", categoricas, CATEGORICAS),
+    ("ya_listas", "passthrough", YA_LISTAS), #ya son 0/1 o seno/coseno, no hay que tocarlas
+])
 
 # TODO 3: aprende la preparacion solo con entrenamiento y transforma
 # entrenamiento y prueba. Imprime cuantas columnas quedan.
-X_ent_listo, X_prueba_listo = None, None
+X_ent_listo = preparacion.fit_transform(X_ent) #fit solo con entrenamiento
+X_prueba_listo = preparacion.transform(X_prueba) #prueba solo se transforma con lo que se aprendio
+print("Columnas despues de preparar:", X_ent_listo.shape[1])
+print(list(preparacion.get_feature_names_out()))
 
 # TODO 4: medianas_aprendidas, las medianas que aprendio el imputador de
 # numericas (atributo statistics_). Imprimelas junto a las medianas de
 # entrenamiento y las de todo el dataset.
-medianas_aprendidas = None
+medianas_aprendidas = preparacion.named_transformers_["numericas"].named_steps["imputar"].statistics_
+print("Medianas que aprendio el imputador:", {columna: float(mediana) for columna, mediana in zip(NUMERICAS, medianas_aprendidas)})
+print("Medianas de entrenamiento:", X_ent[NUMERICAS].median().to_dict())
+print("Medianas de todo el dataset:", X[NUMERICAS].median().to_dict())
 
 # TODO 5: transforma el viaje nuevo de abajo, que sale de una zona que el
 # entrenamiento nunca vio, y guarda en zona_origen_en_1 cuantas columnas
@@ -54,7 +73,12 @@ nuevo = pd.DataFrame([{
     "es_fin_de_semana": 0, "es_hora_pico": 1, "es_tarifa_fija": 0,
     "zona_origen": "Bronx", "zona_destino": "Midtown", "metodo_pago": "tarjeta",
 }])
-zona_origen_en_1 = None
+nuevo_listo = pd.DataFrame(preparacion.transform(nuevo), columns=preparacion.get_feature_names_out())
+columnas_origen = [columna for columna in nuevo_listo.columns if "zona_origen_" in columna]
+zona_origen_en_1 = int(nuevo_listo[columnas_origen].sum(axis=1).iloc[0]) #como Bronx no existe en entrenamiento, todas quedan en 0
+print("Columnas de zona_origen en 1 para el viaje desde el Bronx:", zona_origen_en_1)
+print("Columnas del viaje nuevo:", nuevo_listo.shape[1])
+print("Con get_dummies solo a ese viaje:", list(pd.get_dummies(nuevo, columns=CATEGORICAS).columns))
 
 
 def comprobar(numero, condicion):
