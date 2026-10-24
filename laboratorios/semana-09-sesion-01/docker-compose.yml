@@ -1,0 +1,6 @@
+services:
+  python-app:
+    build: .
+    container_name: semana09
+    volumes:
+      - .:/app #conecta la carpeta del lab con el contenedor, asi no hay que reconstruir si cambio el codigo
