@@ -4,3 +4,4 @@ services:
     container_name: semana09
     volumes:
       - .:/app #conecta la carpeta del lab con el contenedor, asi no hay que reconstruir si cambio el codigo
+      - ../semana-08-sesion-02/plantilla-eda/datos:/datos:ro #el dataset del proyecto, solo lectura (ro) para no modificarlo

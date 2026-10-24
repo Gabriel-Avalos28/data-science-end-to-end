@@ -5,8 +5,6 @@ from sklearn.preprocessing import OrdinalEncoder # INTERFAZ DE TRANSFORMACION, O
 
 viajes = pd.read_csv('viajes_taxi.csv')
 
-viajes.query('tarifa < 999 and duracion_min > 0')
-
 print(viajes.head())
 
 viajes_clean = viajes.query('tarifa < 999 and duracion_min > 0')

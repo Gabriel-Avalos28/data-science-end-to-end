@@ -16,22 +16,23 @@ inicio = pd.to_datetime(viajes["fecha_hora_inicio"])
 
 print("Paso 1: partes de la fecha")
 # TODO 1: la hora (0 a 23) y el dia de la semana (0 es lunes) de inicio.
-viajes["hora"] = 0
-viajes["dia_semana"] = 0
+viajes["hora"] = inicio.dt.hour #saca solo la hora de la fecha
+viajes["dia_semana"] = inicio.dt.dayofweek #lunes es 0 y domingo es 6
 # TODO 2: es_fin_de_semana, 1 los sabados y domingos, 0 el resto.
-viajes["es_fin_de_semana"] = 0
+viajes["es_fin_de_semana"] = (viajes["dia_semana"] >= 5).astype(int) #sabado es 5 y domingo 6, el astype pasa True/False a 1/0
 
 print("Paso 2: hora pico")
 horas_pico = [7, 8, 9, 16, 17, 18, 19]
 # TODO 3: es_hora_pico, 1 si la hora esta en horas_pico y no es fin de
 # semana, 0 el resto.
-viajes["es_hora_pico"] = 0
+viajes["es_hora_pico"] = (viajes["hora"].isin(horas_pico) & (viajes["es_fin_de_semana"] == 0)).astype(int) #el fin de semana no hay hora pico
 
 print("Paso 3: la hora como ciclo")
 # TODO 4: hora_sin y hora_cos, la hora como un punto en un reloj de 24
 # horas.
-viajes["hora_sin"] = 0.0
-viajes["hora_cos"] = 0.0
+#se divide para 24 porque el reloj da la vuelta cada 24 horas, asi la hora 23 queda pegada a la 0
+viajes["hora_sin"] = np.sin(2 * np.pi * viajes["hora"] / 24)
+viajes["hora_cos"] = np.cos(2 * np.pi * viajes["hora"] / 24)
 
 columnas = ["fecha_hora_inicio", "hora", "dia_semana", "es_fin_de_semana", "es_hora_pico", "hora_sin", "hora_cos"]
 print(viajes[columnas].head())
@@ -42,6 +43,10 @@ normales = viajes[(viajes["tarifa"] != 70.0) & (viajes["distancia_km"] > 0)].cop
 normales["tarifa_por_km"] = normales["tarifa"] / normales["distancia_km"]
 print("Tarifa por km, mediana, segun hora pico:")
 print(normales.groupby("es_hora_pico")["tarifa_por_km"].median().round(2))
+# extra: la velocidad explica por que, en hora pico hay trafico
+normales["velocidad_kmh"] = normales["distancia_km"] / (normales["duracion_min"] / 60)
+print("Velocidad en km/h, mediana, segun hora pico:")
+print(normales.groupby("es_hora_pico")["velocidad_kmh"].median().round(2))
 
 print()
 print("Paso 5: que tan lejos quedan dos horas")
