@@ -10,9 +10,9 @@ Hoy construimos juntos, en clase, la misma infraestructura dos veces: primero co
 
 ## Requisitos antes de esta sesión
 
-1. **Docker Desktop instalado y corriendo**, el mismo de la sesión pasada. Verifica con `docker --version` y `docker compose version`.
-2. **Terraform CLI instalado:** sigue la [guía oficial de instalación](https://developer.hashicorp.com/terraform/install).
-3. **Al menos 2 GB libres de espacio en disco**, para las imágenes de Postgres, pgAdmin y Python que se descargan hoy.
+1. **Docker**, el mismo de la sesión pasada. Verifica con `docker --version` y `docker compose version`.
+2. **Terraform CLI:** en el Codespace ya viene instalado, verifica con `terraform -version`. En tu laptop, sigue la [guía oficial de instalación](https://developer.hashicorp.com/terraform/install).
+3. **Al menos 2 GB libres de espacio en disco**, para las imágenes de Postgres, pgAdmin y Python que se descargan hoy (el Codespace ya tiene espacio de sobra).
 
 A diferencia de la sesión de Terraform con Google Cloud de versiones anteriores de este curso, hoy no necesitas ninguna cuenta de nube ni credenciales: toda la infraestructura corre localmente, en tu propio Docker.
 
@@ -51,13 +51,15 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@taxi.local
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "8080:80"
+      - "8085:80"
     depends_on:
       - pg-database
 
 volumes:
   datos_postgres:
 ```
+
+pgAdmin queda en el puerto 8085, no en el 8080: ese puerto lo usa Kestra desde la Semana 4, y en el laboratorio integrador de la Semana 7 los dos corren al mismo tiempo.
 
 **Respuesta 1, antes de correr `docker compose up`:** si quitáramos el bloque `volumes` de `pg-database` y detuviéramos los contenedores, ¿qué pasaría con los datos que hayamos cargado?
 
@@ -73,7 +75,7 @@ Levanta los dos servicios:
 docker compose up -d
 ```
 
-Abre `localhost:8080` en el navegador, inicia sesión en pgAdmin con las credenciales de arriba, y registra un servidor nuevo apuntando a `pg-database` (no `localhost`), puerto 5432, usuario y contraseña de `POSTGRES_USER`/`POSTGRES_PASSWORD`. Confirma que ves la base `taxi_db`, todavía vacía.
+Abre `localhost:8085` en el navegador (en el Codespace, desde la pestaña **Ports** de VS Code, puerto 8085), inicia sesión en pgAdmin con las credenciales de arriba, y registra un servidor nuevo apuntando a `pg-database` (no `localhost`), puerto 5432, usuario y contraseña de `POSTGRES_USER`/`POSTGRES_PASSWORD`. Confirma que ves la base `taxi_db`, todavía vacía.
 
 ## Paso 2: agregar la ingesta
 
@@ -211,7 +213,7 @@ resource "docker_container" "pgadmin" {
 
   ports {
     internal = 80
-    external = 8080
+    external = 8085
   }
 
   networks_advanced {
