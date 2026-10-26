@@ -2,14 +2,16 @@
 # Verifica que cada herramienta del curso responde. Corre al crear el Codespace y
 # puedes repetirla cuando quieras: bash .devcontainer/verificar.sh
 set -euo pipefail
+# sed -n en vez de head: head cierra la tuberia antes de que el comando termine
+# de escribir, y con pipefail eso aborta el script (codigo 141, SIGPIPE).
 
 echo "--- Verificacion del ambiente ---"
 python --version
-java -version 2>&1 | head -n 1
-terraform -version | head -n 1
+java -version 2>&1 | sed -n '1p'
+terraform -version | sed -n '1p'
 docker --version
 docker compose version
-dbt --version | head -n 3
+dbt --version | sed -n '1,3p'
 python - <<'PY'
 import duckdb, kafka, matplotlib, pandas, pyspark, sklearn
 print(f"pandas {pandas.__version__} | duckdb {duckdb.__version__} | pyspark {pyspark.__version__}")
