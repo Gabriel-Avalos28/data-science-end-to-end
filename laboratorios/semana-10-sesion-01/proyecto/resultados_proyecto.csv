@@ -1,0 +1,9 @@
+modelo,mae_entrenamiento,mae_prueba,brecha,segundos
+linea base (mediana),1.437,1.4103,-0.0267,0.566
+linea base (promedio),1.8648,1.7677,-0.0971,0.552
+lineal,1.812,1.7238,-0.0883,0.776
+ridge alpha=10,1.8098,1.7202,-0.0896,0.733
+arbol sin limite,0.0186,2.173,2.1545,3.683
+bosque aleatorio,1.5368,1.5069,-0.0299,73.96
+gradient boosting,1.6487,1.5659,-0.0829,71.55
+gradient boosting (absoluto),1.437,1.4103,-0.0267,3.197
