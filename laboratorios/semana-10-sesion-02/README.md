@@ -83,23 +83,29 @@ python3 ejercicio2_tres_soluciones.py
 
 **Respuesta 1:** ¿qué LLM usaste? Completa la tabla con los números de tu corrida.
 
+Usé tres: Claude (Opus 5.5), Gemini (Gemini 4 Argon) y ChatGPT (GPT-6). El script usa la respuesta de Claude (`respuestas_llm.txt`); las otras dos están en `respuestas_gemini.txt` y `respuestas_chatgpt.txt`. El prompt tiene 2902 caracteres, unos 726 tokens, y 10 000 viajes son 500 prompts: 363 mil tokens de entrada al mes.
+
 | | Error en los 20 viajes | Costo de entrenar | Costo de 10 000 viajes al mes | ¿Puedes explicar una predicción? |
 |---|---|---|---|---|
-| Gradient boosting | _(…)_ | _(…)_ | _(…)_ | _(…)_ |
-| Red neuronal | _(…)_ | _(…)_ | _(…)_ | _(…)_ |
-| LLM | _(…)_ | _(…)_ | _(…)_ | _(…)_ |
+| Gradient boosting | 0.8957 | 0.29 s en mi CPU | Casi 0: predice en milisegundos en el mismo servidor | Sí: `feature_importances_` dice qué columnas pesan más (la distancia) |
+| Red neuronal | 0.9637 | 3.86 s en mi CPU | Casi 0, igual que el boosting | Difícil: son miles de pesos sin significado directo |
+| LLM: Claude Opus 5.5 | 1.1375 | 0 (no se entrena, solo 30 ejemplos en el prompt) | 1.45 dólares ($4 por millón de tokens de entrada) | Te da una explicación en palabras, pero no hay garantía de que sea la razón real del número |
+| LLM: Gemini 4 Argon | 1.2685 | 0 | 0.73 dólares con la tarifa de lanzamiento ($2), 1.45 desde diciembre ($4) | Igual que Claude |
+| LLM: ChatGPT (GPT-6) | 0.9035 | 0 | Entre 0.04 y 0.73 dólares según la variante ($0.10 a $2); ChatGPT no me dijo cuál usó | Igual que Claude |
+
+Ojo: el costo ignora los tokens de salida, como pide el ejercicio, pero en los modelos con razonamiento esos tokens se cobran 5 veces más caro y pueden ser más que los de entrada (Gemini estimó unos 2100 de salida por prompt). El costo real sería varias veces mayor.
 
 **Respuesta 2:** corre el mismo prompt otra vez, en una conversación nueva. ¿Te dio los mismos 20 números? ¿Qué problema le trae eso a una app que le cobra al pasajero?
 
-_(tu respuesta)_
+_(pendiente: correr el mismo prompt en una conversación nueva del mismo LLM y comparar.)_ Lo que ya se ve con los tres LLM: con el mismo prompt dieron números distintos en 17 de los 20 viajes, con diferencias de hasta 2.30 dólares (viaje 12, Upper West Side a Midtown: 12.70, 12.23 y 10.40). Solo coincidieron en los 3 viajes de tarifa fija al aeropuerto (70). Para una app que cobra, eso es un problema: el mismo viaje no puede costar distinto según cuándo se pregunte, es injusto con el pasajero y no se puede auditar. El gradient boosting siempre da el mismo número para los mismos datos.
 
 **Respuesta 3:** busca en tus 20 respuestas la peor predicción del LLM. ¿Qué tiene de particular ese viaje? ¿Lo habría aprendido el ensamblaje con las 2380 filas de entrenamiento?
 
-_(tu respuesta)_
+La peor de los tres LLM fue el mismo viaje: de JFK Airport a JFK Airport, 1.01 km, con tarifa real de 11.46. Claude dijo 7.70, Gemini 6.53 y ChatGPT 7.50, errores de 3.8 a 4.9 dólares. Lo particular es que es un viaje corto dentro del aeropuerto: no es tarifa fija (`es_tarifa_fija = 0`), pero cuesta más que un viaje de 1 km en la ciudad (en los ejemplos, 0.94 km en Midtown costó 7.46). Los LLM extrapolaron con la regla "1 km ≈ 7 dólares" porque en los 30 ejemplos no hay ningún viaje corto en JFK. El ensamblaje sí lo vio en las 2380 filas de entrenamiento y predijo 12.74, a 1.28 del real. Con solo 30 ejemplos el LLM no puede aprender los casos raros.
 
 **Si terminas antes:** el error en los 20 viajes de muestra no es el mismo que en los 595 de prueba. ¿Por qué no se mide el LLM sobre los 595, y qué tan confiable es una comparación sobre 20?
 
-_(tu respuesta)_
+No se mide sobre los 595 porque habría que pegar los 595 viajes en el chat (30 prompts de 20 viajes, o uno muy largo), copiar a mano 595 números y pagar 30 veces más; además, un prompt muy largo aumenta el riesgo de que el LLM se salte o desordene filas. Pero una comparación sobre 20 es poco confiable: un solo viaje cambia mucho el promedio. Se ve en mis números: en los 20 viajes el boosting (0.90) le gana a la red (0.96), pero en los 595 es al revés (1.28 contra 1.17). Y sin el viaje de JFK a JFK, Claude bajaría de 1.14 a cerca de 1.0. Con 20 viajes solo puedo decir que los tres quedan parecidos, no cuál es mejor.
 
 ## Ejercicio 3: ¿qué solución conviene para tu proyecto?
 
