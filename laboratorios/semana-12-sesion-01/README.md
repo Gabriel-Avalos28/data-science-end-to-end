@@ -131,7 +131,9 @@ El archivo [`.github/workflows/pruebas.yml`](../../.github/workflows/pruebas.yml
 
 **Pega el enlace a la ejecución de GitHub Actions donde pasan tus pruebas:**
 
-_(tu respuesta)_
+https://github.com/Gabriel-Avalos28/data-science-end-to-end/actions/runs/42738146879
+
+En el job `pytest`, el paso "Correr las pruebas de psets/proyecto" muestra las 7 pruebas de `test_pipeline_proyecto.py` en `PASSED` y termina con `7 passed`.
 
 **¿Qué patrón elegiste para tu proyecto, y qué número de latencia lo decide?**
 
@@ -139,7 +141,15 @@ _(tu respuesta)_
 
 **Rompe a propósito una de tus pruebas (cambia un valor esperado), haz push y mira qué pasa en GitHub. Después arréglala. ¿Qué te dijo GitHub, y dónde lo viste?**
 
-_(tu respuesta)_
+En `test_costo_stock_castiga_mas_lo_que_falta` cambié el valor esperado de `4.0` a `5.0` e hice push. GitHub marcó la ejecución con una **X roja** ([ejecución 42738786764](https://github.com/Gabriel-Avalos28/data-science-end-to-end/actions/runs/42738786764)). La vi en la pestaña **Actions** de mi fork y también junto al commit, en la página principal del repositorio. Dentro de la ejecución, el job `pytest` falló en el paso "Correr las pruebas de psets/proyecto", que mostraba exactamente qué prueba falló y por qué:
+
+```
+FAILED psets/proyecto/modelado/test_pipeline_proyecto.py::test_costo_stock_castiga_mas_lo_que_falta - assert 4.0 == 5.0 ± 5.0e-06
+========================= 1 failed, 6 passed in 1.01s ==========================
+##[error]Process completed with exit code 1.
+```
+
+El código no estaba mal: el costo de faltar 2 unidades y sobrar 2 es (2·3 + 2·1) / 2 = 4, y lo que estaba mal era el valor esperado. Lo devolví a `4.0`, hice push y la ejecución siguiente volvió a quedar en verde con `7 passed`. Así, cualquier cambio que rompa una prueba queda marcado en el mismo commit que lo introdujo, sin que nadie tenga que acordarse de correr `pytest`.
 
 ## Antes de la próxima sesión
 
