@@ -45,7 +45,7 @@ def modelo_de_prueba():
 
 def test_columnas_de_salida():
     predicciones = predecir_lote(modelo_de_prueba(), viajes_de_prueba(), "abc123")
-    assert list(predicciones.columns) == ["id_viaje", "tarifa_estimada", "version_modelo"]
+    assert list(predicciones.columns) == ["id_viaje", "tarifa_estimada", "version_modelo"] 
 
 
 def test_una_prediccion_por_viaje():
@@ -54,9 +54,15 @@ def test_una_prediccion_por_viaje():
     # TODO 4: comprueba que hay una fila por viaje, con los mismos id_viaje y
     # en el mismo orden.
 
+    assert len(predicciones) == len(viajes) #---------------comprobar que la longitud de mi lote es igual a a la longitud de los viajes que mande
+    assert list(predicciones['id_viaje']) == list(viajes['id_viaje']) #---------------mismos id_viaje y en el mismo orden
+
 
 def test_viaje_incompleto_tambien_se_estima():
     predicciones = predecir_lote(modelo_de_prueba(), viajes_de_prueba(), "abc123")
     # TODO 5: el viaje 12 llega sin pasajeros. Comprueba que ningun viaje se
     # queda sin tarifa estimada, y que todas las filas llevan la version
     # del modelo que se paso.
+
+    assert predicciones['tarifa_estimada'].notna().all() #-----------------comprobar que no hay ningun valor nulo en todas las filas, ESTE ES UN CASO DE USO
+    assert (predicciones['version_modelo'] == "abc123").all() #-----------------todas las filas llevan la version del modelo que se paso
