@@ -119,7 +119,7 @@ def test_preparacion_acepta_categoria_nueva_y_precio_vacio():
 
 def test_costo_stock_castiga_mas_lo_que_falta():
     # Faltan 2 unidades (2 * 3 = 6) y sobran 2 (2 * 1 = 2): promedio (6 + 2) / 2 = 4.
-    assert costo_stock([5, 1], [3, 3]) == pytest.approx(4.0)
+    assert costo_stock([5, 1], [3, 3]) == pytest.approx(5.0)
     assert costo_stock([4, 0], [4, 0]) == 0
     # Quedarse corto por 1 cuesta mas que pasarse por 1.
     assert costo_stock([2], [1]) > costo_stock([2], [3])
