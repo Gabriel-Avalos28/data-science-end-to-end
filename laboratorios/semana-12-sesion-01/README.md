@@ -24,11 +24,11 @@ A partir de la lectura previa:
 
 **Según el artículo, ¿qué distingue un sistema de predicción batch de uno online? Da un ejemplo de cada uno.**
 
-_(tu respuesta)_
+Lo que los distingue es **cuándo se calcula la predicción**. En un sistema **batch**, las predicciones se calculan por adelantado, para muchos casos a la vez y cada cierto tiempo (cada noche, cada pocas horas); se guardan en una tabla y, cuando alguien las necesita, solo se leen. En un sistema **online**, la predicción se calcula en el momento en que llega la petición, con los datos de ese instante, y se devuelve en milisegundos. Ejemplo batch: las recomendaciones de productos o películas que se recalculan cada noche para cada usuario (o, en este curso, las tarifas de los viajes programados para mañana). Ejemplo online: la detección de fraude en el momento de pagar con tarjeta, o el precio y el tiempo de llegada que muestra una app de transporte al elegir un destino.
 
 **¿Qué limitación tiene el sistema batch que el online resuelve, y qué cuesta resolverla?**
 
-_(tu respuesta)_
+El batch solo sabe responder sobre los casos que conocía cuando corrió el lote, y con los datos de ese momento. Sus predicciones envejecen hasta la siguiente corrida, no sirven para un caso nuevo (un destino que nadie reservó, un usuario recién registrado) y no reaccionan a lo que acaba de pasar. Además gasta cálculo en predicciones que quizás nadie use. El online resuelve eso, pero cuesta más: un servicio encendido todo el tiempo y que no se puede caer, un modelo lo bastante rápido para responder en milisegundos (a veces hay que elegir uno más simple), las features disponibles en el momento de la petición (a veces con un pipeline de datos en tiempo real), y más monitoreo de la latencia, de los errores y de que las features se calculen igual que en el entrenamiento.
 
 ## Pregunta de apertura
 

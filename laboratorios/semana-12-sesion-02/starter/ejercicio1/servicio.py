@@ -9,6 +9,8 @@ en el Codespace, desde esta carpeta y despues de python entrenar.py:
 La documentacion interactiva queda en el puerto 8000, ruta /docs.
 """
 
+# ----------------- CREAR LA API REST  
+
 import os
 from datetime import datetime
 
@@ -25,10 +27,10 @@ RUTA_MODELO = os.environ.get("RUTA_MODELO", "modelo_tarifa.joblib")
 # El modelo se carga una sola vez, al arrancar el servicio, y no en cada
 # peticion: leer el archivo tarda mucho mas que predecir.
 modelo = None
-if os.path.exists(RUTA_MODELO):
+if os.path.exists(RUTA_MODELO):  # ------- VERIFICAR QUE EL MODELO SERIALZIADO EXISTA
     modelo = joblib.load(RUTA_MODELO)
 
-app = FastAPI(title="Tarifa estimada de taxis")
+app = FastAPI(title="Tarifa estimada de taxis") # ---------- DECIRLE QUE VOY A CREAR UNA APP
 
 
 class Viaje(BaseModel):
@@ -37,8 +39,12 @@ class Viaje(BaseModel):
     # datetime, para que una fecha mal escrita se rechace) y las zonas son
     # obligatorias; distancia_km, pasajeros y metodo_pago pueden llegar
     # vacios (la preparacion los imputa), con valor por defecto None.
+    fecha_hora_inicio: datetime
     zona_origen: str
     zona_destino: str
+    distancia_km: float | None = None
+    pasajeros: float | None = None   #-------TAMBIEN RECIBO AUSENTES CON NONE (con = None, si no seria obligatorio)
+    metodo_pago: str | None = None
 
 
 @app.get("/salud")
@@ -51,6 +57,11 @@ def predecir(viaje: Viaje):
     # TODO 2: convierte el viaje en un DataFrame de una fila
     # (viaje.model_dump() lo da como diccionario), agrega las features y
     # estima la tarifa con el modelo.
-    tarifa = 0.0
+    
+    dto = pd.DataFrame([viaje.model_dump()])
+    # agregar_features necesita fecha_hora_inicio y las zonas: se le pasa el viaje completo,
+    # y despues el modelo recibe las columnas en el orden con que se entreno.
+    datos_enriquecidos = agregar_features(dto)
+    tarifa = modelo.predict(datos_enriquecidos[NUMERICAS + YA_LISTAS + CATEGORICAS])[0]
 
     return {"tarifa_estimada": round(float(tarifa), 2)}

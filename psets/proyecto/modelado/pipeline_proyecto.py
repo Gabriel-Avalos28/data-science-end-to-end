@@ -25,7 +25,9 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # La muestra del 1% de obt_sales.csv.gz que guarda features_proyecto.py de la Semana 9,
 # Sesion 1, con fecha_lanzamiento y precio_promedio ya calculados. No esta en el
 # repositorio (*.csv.gz esta en .gitignore).
-RUTA = Path(__file__).resolve().parents[3] / "laboratorios" / "semana-09-sesion-01" / "plantilla-features" / "muestra_con_features.csv.gz"
+# Se arma relativa a esta carpeta y sin resolver ../, para que importar el modulo no falle
+# donde la muestra no existe (en el contenedor del servicio o en GitHub Actions).
+RUTA = Path(__file__).parent / ".." / ".." / ".." / "laboratorios" / "semana-09-sesion-01" / "plantilla-features" / "muestra_con_features.csv.gz"
 
 OBJETIVO = "UNITS"  # unidades vendidas de un producto en una tienda en un dia
 NUMERICAS = ["SELL_PRICE", "precio_relativo", "dias_desde_lanzamiento"]  # se imputan y se escalan
@@ -76,6 +78,44 @@ def agregar_features(datos):
     datos["precio_relativo"] = datos["SELL_PRICE"] / datos["precio_promedio"]
     datos[YA_LISTAS] = datos[YA_LISTAS].astype(int)  # vienen como True/False, las paso a 1/0
     return datos
+
+
+# Dias del mes con beneficio SNAP en cada estado: son fijos y salen del calendario del M5
+# (comprobado contra IS_SNAP en toda la muestra).
+DIAS_SNAP = {
+    "CA": set(range(1, 11)),
+    "TX": {1, 3, 5, 6, 7, 9, 11, 12, 13, 15},
+    "WI": {2, 3, 5, 6, 8, 9, 11, 12, 14, 15},
+}
+
+
+def agregar_calendario(datos):
+    """Devuelve una copia con WEEKDAY, IS_WEEKEND e IS_SNAP calculados desde DATE y STORE_ID,
+    y CAT_ID desde ITEM_ID (FOODS_3_090 -> FOODS). Reproduce las columnas del archivo
+    original, para que quien pida una prediccion solo mande la fecha, la tienda y el producto."""
+    datos = datos.copy()
+    fecha = pd.to_datetime(datos["DATE"])
+    datos["WEEKDAY"] = fecha.dt.day_name()
+    datos["IS_WEEKEND"] = fecha.dt.dayofweek >= 5
+    estado = datos["STORE_ID"].str.split("_").str[0]
+    datos["IS_SNAP"] = [dia in DIAS_SNAP.get(e, set()) for e, dia in zip(estado, fecha.dt.day)]
+    datos["CAT_ID"] = datos["ITEM_ID"].str.split("_").str[0]
+    return datos
+
+
+def referencias_por_serie(datos):
+    """La tabla fecha_lanzamiento y precio_promedio de cada producto en cada tienda, a partir
+    de una tabla que ya las tenga (como la muestra de features_proyecto.py)."""
+    return datos.drop_duplicates(SERIE).set_index(SERIE)[["fecha_lanzamiento", "precio_promedio"]]
+
+
+def preparar_peticiones(peticiones, referencias):
+    """De lo que conoce quien pide una prediccion (DATE, ITEM_ID, STORE_ID, SELL_PRICE e
+    IS_EVENT_DAY) a las columnas del modelo, con las mismas funciones del entrenamiento.
+    Una serie que no esta en las referencias queda con las features vacias, y las imputa
+    la preparacion."""
+    datos = agregar_calendario(peticiones).join(referencias, on=SERIE)
+    return agregar_features(datos)
 
 
 def dividir_por_fecha(datos, corte=CORTE):

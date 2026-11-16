@@ -16,12 +16,15 @@ from modelado.pipeline_proyecto import (
     CORTE,
     FUGAS,
     OBJETIVO,
+    agregar_calendario,
     agregar_features,
     columnas_modelo,
     costo_stock,
     dividir_por_fecha,
     precio_promedio_por_serie,
     preparacion,
+    preparar_peticiones,
+    referencias_por_serie,
 )
 
 
@@ -37,7 +40,7 @@ def ventas_de_prueba():
         "SELL_PRICE": [5.0, 4.5, 10.0, 5.5, 8.0],
         "IS_WEEKEND": [True, False, False, False, False],
         "IS_EVENT_DAY": [False, False, True, True, False],
-        "IS_SNAP": [False, True, False, False, True],
+        "IS_SNAP": [True, True, False, True, True],  # el calendario real: CA del 1 al 10, TX el 15
         "IS_PRE_LAUNCH": [False, False, False, False, False],
         "fecha_lanzamiento": ["2015-03-01", "2015-03-01", "2014-12-31", "2015-03-01", "2014-12-31"],
         "precio_promedio": [5.0, 5.0, 10.0, 5.0, 10.0],
@@ -123,3 +126,26 @@ def test_costo_stock_castiga_mas_lo_que_falta():
     assert costo_stock([4, 0], [4, 0]) == 0
     # Quedarse corto por 1 cuesta mas que pasarse por 1.
     assert costo_stock([2], [1]) > costo_stock([2], [3])
+
+
+def test_calendario_reproduce_las_columnas_del_archivo():
+    ventas = ventas_de_prueba()
+    calculado = agregar_calendario(ventas[["DATE", "ITEM_ID", "STORE_ID"]])
+    assert calculado["WEEKDAY"].tolist() == ventas["WEEKDAY"].tolist()
+    assert calculado["IS_WEEKEND"].tolist() == ventas["IS_WEEKEND"].tolist()
+    assert calculado["CAT_ID"].tolist() == ventas["CAT_ID"].tolist()
+    # SNAP: CA del 1 al 10; TX el 15 si y el 31 no; WI el 2 si y el 1 no.
+    snap = agregar_calendario(pd.DataFrame({
+        "DATE": ["2016-03-10", "2016-03-11", "2016-03-15", "2016-03-31", "2016-03-02", "2016-03-01"],
+        "ITEM_ID": ["FOODS_1_001"] * 6,
+        "STORE_ID": ["CA_1", "CA_1", "TX_2", "TX_2", "WI_3", "WI_3"],
+    }))
+    assert snap["IS_SNAP"].tolist() == [True, False, True, False, True, False]
+
+
+def test_preparar_peticiones_da_las_mismas_features_que_el_entrenamiento():
+    ventas = ventas_de_prueba()
+    entrenamiento = agregar_features(ventas)
+    peticiones = ventas[["DATE", "ITEM_ID", "STORE_ID", "SELL_PRICE", "IS_EVENT_DAY"]]
+    servicio = preparar_peticiones(peticiones, referencias_por_serie(ventas))
+    pd.testing.assert_frame_equal(servicio[columnas_modelo()], entrenamiento[columnas_modelo()])
