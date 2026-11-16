@@ -49,3 +49,8 @@ _to_delete/
 
 # Dataset del proyecto (muy pesado para GitHub)
 *.csv.gz
+
+# Registros del servicio y del monitoreo (Semana 13): se regeneran al correr
+predicciones.jsonl
+cobros.csv
+modelo_version.txt
