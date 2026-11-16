@@ -23,5 +23,7 @@ cliente = MlflowClient()
 # TODO 2: pon el alias ALIAS en esa version del modelo NOMBRE, con
 # cliente.set_registered_model_alias(nombre, alias, version).
 
+cliente.set_registered_model_alias(NOMBRE, ALIAS, version)  #---------pone (o mueve) el alias "produccion" a esa version; si estaba en otra, se quita de ahi
+
 actual = cliente.get_model_version_by_alias(NOMBRE, ALIAS)
 print(f"{NOMBRE}@{ALIAS} es ahora la version {actual.version} (corrida {actual.run_id[:12]})")

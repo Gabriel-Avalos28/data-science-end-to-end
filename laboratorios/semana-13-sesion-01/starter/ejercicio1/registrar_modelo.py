@@ -24,7 +24,7 @@ logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 NOMBRE = "tarifa-taxis"
 
-neuronas = int(sys.argv[1])
+neuronas = int(sys.argv[1])   #----------- argumento-valor, el numero de neuronas de la capa oculta
 viajes = pd.read_csv("viajes_features.csv")
 X_entrenamiento, X_prueba, y_entrenamiento, y_prueba = dividir(viajes)
 
@@ -44,6 +44,10 @@ with mlflow.start_run(run_name=f"red-{neuronas}"):
     # registered_model_name=NOMBRE. log_model devuelve informacion del
     # modelo: su atributo registered_model_version es el numero de la
     # version nueva.
-    version = None
+    
+    info = mlflow.sklearn.log_model(modelo, "modelo", registered_model_name=NOMBRE)  #---------guarda el modelo en la corrida y lo registra como version nueva de "tarifa-taxis"
+    version = info.registered_model_version  #---------log_model ya devuelve la version nueva, no hace falta cargar el modelo
+    #----------vamos a tener versiones de modelos, cada vez que corremos este script con un numero diferente de neuronas. Cada version tiene su corrida y su metrica, y no reemplaza a otra.
+    
 
 print(f"Version {version} de {NOMBRE}: red de {neuronas} neuronas, MAE {mae:.4f}")

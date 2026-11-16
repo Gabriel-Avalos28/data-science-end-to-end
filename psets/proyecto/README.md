@@ -30,13 +30,15 @@ Los datos no están en el repositorio. Para regenerarlos desde cero: [los comand
 
 El servicio responde cuántas unidades de un producto se venden en una tienda en un día. Lo usa quien necesite una predicción que no está en el lote nocturno (ver [`docs/despliegue.md`](docs/despliegue.md)): un tablero, otra aplicación o una simulación de precio. Todo se corre desde `psets/proyecto/`.
 
-**1. Exportar el modelo desde MLflow.** Con el servidor de MLflow del Codespace levantado (puerto 5050):
+**1. Registrar, promover y exportar el modelo.** Con el servidor de MLflow del Codespace levantado (puerto 5050):
 
 ```
-python servicio/exportar_modelo.py
+python -m servicio.registrar_modelo       # entrena y registra una version nueva de pronostico-ventas-tiendas
+python -m servicio.promover 1             # pone el alias produccion en la version 1 (y lista todas las versiones)
+python servicio/exportar_modelo.py        # exporta la version que tiene el alias produccion
 ```
 
-Carga el modelo final, el bosque aleatorio del run `853a6190c5b64f2cb5aa9333c55445c0` (`runs:/853a6190c5b64f2cb5aa9333c55445c0/modelo`), y lo guarda en `servicio/modelo.joblib`. También guarda `servicio/referencias.csv`, con la fecha de lanzamiento y el precio promedio de entrenamiento de cada producto en cada tienda (30,462 series), y `servicio/modelo_info.json`, con el `run_id`. Ninguno de los tres se sube: se regeneran con este script, que necesita la muestra de features de la Semana 9.
+`exportar_modelo.py` guarda la versión con el alias `produccion` en `servicio/modelo.joblib`, su número en `servicio/modelo_version.txt`, y en `servicio/referencias.csv` la fecha de lanzamiento y el precio promedio de entrenamiento de cada producto en cada tienda (30,462 series). Ninguno de los tres se sube: se regeneran con estos scripts, que necesitan la muestra de features de la Semana 9. El criterio para promover una versión, y cómo volver a la anterior, está en [`docs/despliegue.md`](docs/despliegue.md#versionado-y-registro).
 
 **2. Construir y levantar el contenedor.** Usa `scikit-learn==1.5.2`, la misma versión con que se entrenó el modelo:
 
@@ -55,9 +57,9 @@ curl -X POST localhost:8000/predecir -H "Content-Type: application/json" \
 ```
 
 ```
-{"unidades_estimadas":7.45,"serie_conocida":true,"version_modelo":"6ba4baa93c74"}
+{"unidades_estimadas":7.45,"serie_conocida":true,"version_modelo":"1"}
 ```
 
-`version_modelo` son los primeros 12 caracteres del MD5 de `modelo.joblib`, y `serie_conocida` dice si el producto tenía referencias (si no, sus features las imputa la preparación). `GET /salud` dice si el modelo está cargado, y con qué `version_modelo` y `run_id`. Una entrada inválida (sin precio, con un precio negativo, una fecha mal escrita o una tienda fuera de CA, TX o WI) recibe `422` sin llegar al modelo.
+`version_modelo` es el número de versión del registro que calculó la predicción, y `serie_conocida` dice si el producto tenía referencias (si no, sus features las imputa la preparación). `GET /salud` dice si el modelo está cargado y qué `version_modelo` sirve. Una entrada inválida (sin precio, con un precio negativo, una fecha mal escrita o una tienda fuera de CA, TX o WI) recibe `422` sin llegar al modelo.
 
 **Pruebas.** `pytest psets/proyecto -v`, desde la raíz del fork, corre las pruebas del pipeline (`modelado/test_pipeline_proyecto.py`) y las del servicio (`servicio/test_api.py`), con un modelo y unas referencias de prueba. GitHub Actions las corre en cada push.

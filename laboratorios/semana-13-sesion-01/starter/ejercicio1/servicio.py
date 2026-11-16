@@ -33,7 +33,11 @@ if os.environ.get("CARGAR_MODELO", "si") == "si":
     # (MlflowClient().get_model_version_by_alias(NOMBRE, ALIAS)), guarda su
     # numero en version_servida y carga el modelo de esa version con
     # mlflow.sklearn.load_model(f"models:/{NOMBRE}/{version_servida}").
-    pass
+    
+    registrado = MlflowClient().get_model_version_by_alias(NOMBRE, ALIAS)  #---------pregunto al registro que version tiene el alias "produccion"
+    version_servida = registrado.version  #---------guardo su numero (texto, ej. "2") para responderlo en /salud y en cada prediccion
+    modelo = mlflow.sklearn.load_model(f"models:/{NOMBRE}/{version_servida}")  #---------cargo ESA version exacta (f-string: sin la f buscaria un modelo llamado "{NOMBRE}")
+    
 
 app = FastAPI(title="Tarifa estimada de taxis")
 
@@ -59,4 +63,4 @@ def predecir(viaje: Viaje):
     tarifa = modelo.predict(datos[NUMERICAS + YA_LISTAS + CATEGORICAS])[0]
     # TODO 4: agrega a la respuesta "version_modelo", con version_servida: quien
     # reciba una tarifa tiene que poder saber que modelo la calculo.
-    return {"tarifa_estimada": round(float(tarifa), 2)}
+    return {"tarifa_estimada": round(float(tarifa), 2), "version_modelo": version_servida}  #---------cada tarifa dice que version del registro la calculo

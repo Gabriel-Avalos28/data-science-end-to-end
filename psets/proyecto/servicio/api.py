@@ -9,8 +9,6 @@ fin de semana, SNAP, categoria, dias desde el lanzamiento y precio relativo) con
 modelado/pipeline_proyecto.py, las mismas con que se entreno el modelo.
 """
 
-import hashlib
-import json
 import os
 from datetime import date
 from pathlib import Path
@@ -25,21 +23,14 @@ from modelado.pipeline_proyecto import SERIE, columnas_modelo, preparar_peticion
 CARPETA = Path(__file__).resolve().parent
 RUTA_MODELO = Path(os.environ.get("RUTA_MODELO", CARPETA / "modelo.joblib"))
 RUTA_REFERENCIAS = Path(os.environ.get("RUTA_REFERENCIAS", CARPETA / "referencias.csv"))
-RUTA_INFO = CARPETA / "modelo_info.json"
-
-
-def huella(ruta):
-    """Los primeros 12 caracteres del MD5 del archivo: la version exacta del modelo."""
-    return hashlib.md5(ruta.read_bytes()).hexdigest()[:12]
-
+RUTA_VERSION = CARPETA / "modelo_version.txt"  #---------Semana 13: el numero de version del registro, exportado junto al modelo
 
 # El modelo y las referencias se cargan una sola vez, al arrancar, no en cada peticion.
-modelo, version_modelo, run_id = None, None, None
+modelo, version_modelo = None, None
 if RUTA_MODELO.exists():
     modelo = joblib.load(RUTA_MODELO)
-    version_modelo = huella(RUTA_MODELO)
-if RUTA_INFO.exists():
-    run_id = json.loads(RUTA_INFO.read_text())["run_id"]
+if RUTA_VERSION.exists():
+    version_modelo = RUTA_VERSION.read_text().strip()  #---------el contenedor sabe que version sirve sin llegar al servidor de MLflow
 
 referencias = pd.DataFrame(columns=["fecha_lanzamiento", "precio_promedio"],
                            index=pd.MultiIndex.from_arrays([[], []], names=SERIE))
@@ -63,8 +54,7 @@ def salud():
     return {
         "estado": "ok",
         "modelo_cargado": modelo is not None,
-        "version_modelo": version_modelo,
-        "run_id": run_id,
+        "version_modelo": version_modelo,  #---------la version del registro "pronostico-ventas-tiendas" que esta sirviendo
         "series_con_referencia": len(referencias),
     }
 
@@ -87,5 +77,5 @@ def predecir(peticion: Peticion):
     return {
         "unidades_estimadas": round(unidades, 2),
         "serie_conocida": bool(datos["fecha_lanzamiento"].notna().iloc[0]),
-        "version_modelo": version_modelo,
+        "version_modelo": version_modelo,  #---------cada prediccion dice que version la calculo
     }

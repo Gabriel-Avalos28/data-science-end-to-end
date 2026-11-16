@@ -1,5 +1,5 @@
 # La imagen del servicio de demanda. Se construye desde psets/proyecto/, porque necesita
-# modelado/ ademas de servicio/. Antes, exporta el modelo y las referencias:
+# modelado/ ademas de servicio/. Antes, exporta la version en produccion y las referencias:
 #
 #     python servicio/exportar_modelo.py
 #     docker build -f servicio/Dockerfile -t servicio-demanda .
@@ -12,7 +12,8 @@ COPY servicio/requirements.txt servicio/requirements.txt
 RUN pip install --no-cache-dir -r servicio/requirements.txt
 
 COPY modelado/pipeline_proyecto.py modelado/
-COPY servicio/api.py servicio/modelo.joblib servicio/referencias.csv servicio/modelo_info.json servicio/
+#---------Semana 13: la imagen lleva el modelo Y su numero de version, sin depender del servidor de MLflow
+COPY servicio/api.py servicio/modelo.joblib servicio/modelo_version.txt servicio/referencias.csv servicio/
 EXPOSE 8000
 
 # 0.0.0.0: escucha en todas las interfaces del contenedor, no solo en su propio localhost.

@@ -140,11 +140,13 @@ def preparacion():
     ])
 
 
-def modelo_final():
-    """El bosque aleatorio elegido en la Semana 11 (run_id 853a6190c5b64f2cb5aa9333c55445c0)."""
+def modelo_final(max_depth=12, min_samples_leaf=50):
+    """El bosque aleatorio elegido en la Semana 11 (run_id 853a6190c5b64f2cb5aa9333c55445c0).
+    Sin argumentos es exactamente ese modelo; los argumentos permiten registrar otras versiones."""
+    #---------max_depth y min_samples_leaf como parametros (Semana 13): cada valor es una version del registro
     return Pipeline([
         ("preparar", preparacion()),
-        ("modelo", RandomForestRegressor(n_estimators=100, max_depth=12, min_samples_leaf=50, n_jobs=-1, random_state=42)),
+        ("modelo", RandomForestRegressor(n_estimators=100, max_depth=max_depth, min_samples_leaf=min_samples_leaf, n_jobs=-1, random_state=42)),
     ])
 
 

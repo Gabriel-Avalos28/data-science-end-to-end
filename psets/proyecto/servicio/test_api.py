@@ -60,7 +60,7 @@ def modelo_de_prueba():
 @pytest.fixture
 def cliente(monkeypatch):
     monkeypatch.setattr(api, "modelo", modelo_de_prueba())
-    monkeypatch.setattr(api, "version_modelo", "abc123")
+    monkeypatch.setattr(api, "version_modelo", "7")  #---------una version inventada: en GitHub Actions no hay registro de MLflow
     monkeypatch.setattr(api, "referencias", referencias_de_prueba())
     return TestClient(api.app)
 
@@ -75,7 +75,7 @@ def test_salud(cliente):
 def test_prediccion_valida(cliente):
     respuesta = cliente.post("/predecir", json=PETICION)
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"unidades_estimadas": 3.0, "serie_conocida": True, "version_modelo": "abc123"}
+    assert respuesta.json() == {"unidades_estimadas": 3.0, "serie_conocida": True, "version_modelo": "7"}
 
 
 def test_el_servicio_calcula_las_features_como_en_el_entrenamiento(cliente, monkeypatch):
@@ -94,6 +94,13 @@ def test_el_servicio_calcula_las_features_como_en_el_entrenamiento(cliente, monk
     # 22 dias desde el lanzamiento, y 1.0 / 1.25 = 0.8 (20% mas barato que su promedio).
     assert fila["dias_desde_lanzamiento"] == 22
     assert fila["precio_relativo"] == pytest.approx(0.8)
+
+
+def test_salud_y_prediccion_dicen_que_version_sirven(cliente):
+    #---------Semana 13: /salud y cada prediccion responden la version del registro que esta sirviendo
+    assert cliente.get("/salud").json()["version_modelo"] == "7"
+    respuestas = [cliente.post("/predecir", json={**PETICION, "fecha": fecha}).json() for fecha in ["2016-05-23", "2016-05-28"]]
+    assert all(respuesta["version_modelo"] == "7" for respuesta in respuestas)
 
 
 def test_serie_desconocida_tambien_se_predice(cliente):
