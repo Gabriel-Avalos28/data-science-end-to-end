@@ -7,6 +7,8 @@ modelo.joblib y referencias.csv (que no existen en GitHub Actions) por un modelo
 referencias de prueba: revisan el contrato de la API, no la calidad del modelo.
 """
 
+import json
+
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
@@ -57,12 +59,22 @@ def modelo_de_prueba():
     return modelo
 
 
+class ModeloQueFalla:
+    """Un modelo que siempre lanza un error, para provocar un 500."""
+
+    def predict(self, X):
+        raise RuntimeError("el modelo fallo")
+
+
 @pytest.fixture
-def cliente(monkeypatch):
+def cliente(monkeypatch, tmp_path):
     monkeypatch.setattr(api, "modelo", modelo_de_prueba())
     monkeypatch.setattr(api, "version_modelo", "7")  #---------una version inventada: en GitHub Actions no hay registro de MLflow
     monkeypatch.setattr(api, "referencias", referencias_de_prueba())
-    return TestClient(api.app)
+    monkeypatch.setattr(api, "RUTA_REGISTRO", tmp_path / "predicciones.jsonl")  #---------registro temporal: no ensucia monitoreo/
+    monkeypatch.setattr(api, "metricas", api.Metricas())  #---------metricas en cero para cada prueba
+    #---------raise_server_exceptions=False: un error del servicio llega como respuesta 500, como lo veria quien llama
+    return TestClient(api.app, raise_server_exceptions=False)
 
 
 def test_salud(cliente):
@@ -75,7 +87,9 @@ def test_salud(cliente):
 def test_prediccion_valida(cliente):
     respuesta = cliente.post("/predecir", json=PETICION)
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"unidades_estimadas": 3.0, "serie_conocida": True, "version_modelo": "7"}
+    cuerpo = respuesta.json()
+    assert len(cuerpo.pop("id_prediccion")) == 32  #---------Semana 13, sesion 2: cada prediccion trae su identificador
+    assert cuerpo == {"unidades_estimadas": 3.0, "serie_conocida": True, "version_modelo": "7"}
 
 
 def test_el_servicio_calcula_las_features_como_en_el_entrenamiento(cliente, monkeypatch):
@@ -128,3 +142,46 @@ def test_sin_modelo_responde_503(cliente, monkeypatch):
     monkeypatch.setattr(api, "modelo", None)
     respuesta = cliente.post("/predecir", json=PETICION)
     assert respuesta.status_code == 503
+
+
+def test_cada_prediccion_queda_registrada(cliente):
+    #---------el registro tiene todo lo necesario para unirlo despues con las ventas reales
+    respuesta = cliente.post("/predecir", json=PETICION).json()
+    with open(api.RUTA_REGISTRO) as archivo:
+        lineas = [json.loads(linea) for linea in archivo]
+    assert len(lineas) == 1
+    registro = lineas[0]
+    assert registro["id_prediccion"] == respuesta["id_prediccion"]
+    assert registro["version_modelo"] == "7"
+    assert registro["unidades_estimadas"] == 3.0
+    assert (registro["fecha"], registro["item_id"], registro["store_id"]) == ("2016-05-23", "FOODS_3_090", "CA_3")
+    assert registro["precio"] == 1.0
+    assert "momento" in registro
+
+
+def test_una_entrada_invalida_no_queda_registrada(cliente):
+    cliente.post("/predecir", json={"fecha": "2016-05-23"})
+    assert not api.RUTA_REGISTRO.exists()  #---------el 422 se rechaza antes de llegar a la ruta: no hay prediccion que guardar
+
+
+def test_metricas_separan_errores_de_validacion_y_de_servidor(cliente, monkeypatch):
+    cliente.post("/predecir", json=PETICION)                         # 200
+    cliente.post("/predecir", json={**PETICION, "precio": -1})       # 422: error de quien llama
+    cliente.post("/predecir", json={**PETICION, "fecha": "ayer"})    # 422
+    monkeypatch.setattr(api, "modelo", ModeloQueFalla())
+    assert cliente.post("/predecir", json=PETICION).status_code == 500  # 500: error nuestro
+    cliente.get("/salud")                                            # no cuenta: no es /predecir
+
+    resumen = cliente.get("/metricas").json()
+    assert resumen["peticiones"] == 4
+    assert resumen["errores_validacion"] == 2
+    assert resumen["errores_servidor"] == 1
+    assert resumen["latencia_p50_ms"] > 0
+    assert resumen["latencia_p95_ms"] >= resumen["latencia_p50_ms"]
+
+
+def test_metricas_sin_peticiones(cliente):
+    assert cliente.get("/metricas").json() == {
+        "peticiones": 0, "errores_validacion": 0, "errores_servidor": 0,
+        "latencia_p50_ms": None, "latencia_p95_ms": None,
+    }

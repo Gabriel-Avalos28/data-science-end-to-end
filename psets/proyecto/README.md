@@ -57,9 +57,18 @@ curl -X POST localhost:8000/predecir -H "Content-Type: application/json" \
 ```
 
 ```
-{"unidades_estimadas":7.45,"serie_conocida":true,"version_modelo":"1"}
+{"id_prediccion":"<32 caracteres hex>","unidades_estimadas":7.45,"serie_conocida":true,"version_modelo":"1"}
 ```
 
 `version_modelo` es el número de versión del registro que calculó la predicción, y `serie_conocida` dice si el producto tenía referencias (si no, sus features las imputa la preparación). `GET /salud` dice si el modelo está cargado y qué `version_modelo` sirve. Una entrada inválida (sin precio, con un precio negativo, una fecha mal escrita o una tienda fuera de CA, TX o WI) recibe `422` sin llegar al modelo.
 
-**Pruebas.** `pytest psets/proyecto -v`, desde la raíz del fork, corre las pruebas del pipeline (`modelado/test_pipeline_proyecto.py`) y las del servicio (`servicio/test_api.py`), con un modelo y unas referencias de prueba. GitHub Actions las corre en cada push.
+**Monitoreo.** `GET /metricas` devuelve las métricas de sistema: peticiones, errores de validación (422), errores de servidor (500 o más) y latencia p50 y p95. Cada predicción queda en `monitoreo/predicciones.jsonl`, con su `id_prediccion`, el momento, la versión, la entrada y la salida, y la respuesta de `/predecir` incluye `id_prediccion`. Para simular 8 semanas con ventas reales de 2016 y ver el desempeño por semana y por versión:
+
+```
+python -m monitoreo.simular_ventas
+python -m monitoreo.desempeno
+```
+
+Qué se vigila, de dónde sale y con qué umbral alerta está en [`docs/monitoreo.md`](docs/monitoreo.md).
+
+**Pruebas.** `pytest psets/proyecto -v`, desde la raíz del fork, corre las pruebas del pipeline (`modelado/test_pipeline_proyecto.py`), las del servicio (`servicio/test_api.py`) y las del monitoreo (`monitoreo/test_desempeno.py`), con un modelo y unas referencias de prueba. GitHub Actions las corre en cada push.

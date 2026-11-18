@@ -1,0 +1,2 @@
+# Los regenera python -m monitoreo.simular_ventas (predicciones.jsonl ya esta en el .gitignore de la raiz).
+ventas_reales.csv
